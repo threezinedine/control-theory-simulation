@@ -1,5 +1,4 @@
 from logic_simulation import Timer
-from gif_concat import *
 from system import Feedback, ISystem, Integral, Gain, Serial, Parallel
 from signals import Step, Impulse, ISignal
 import warnings
@@ -100,8 +99,9 @@ if __name__ == "__main__":
     ax5 = plt.subplot(2, 2, 3)
 
 #    op_sys = Serial(timer, sys=[Gain(timer, gain=23), tank])
-    i_term = Serial(timer, sys=[Gain(timer, gain=KI), Integral(timer)])
-    pid_sys = Parallel(timer, sys=[i_term, Gain(timer, gain=KP)])
+#    i_term = Serial(timer, sys=[Gain(timer, gain=KI), Integral(timer)])
+#    pid_sys = Parallel(timer, sys=[i_term, Gain(timer, gain=KP)])
+    pid_sys = Gain(timer, gain=KP)
 
     pid_cl_sys = Feedback(timer, input_sys=Serial(timer, sys=[pid_sys, tank]))
     time_arr, output = pid_cl_sys.simulate(signal)

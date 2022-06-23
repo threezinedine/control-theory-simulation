@@ -28,6 +28,14 @@ class Integral(ISystem):
     def pre(self, new_pre):
         self.__pre = new_pre
 
+    @property
+    def sum(self):
+        return self.__sum
+
+    @sum.setter
+    def sum(self, new_sum):
+        self.__sum = new_sum
+
     def run_epoch(self, input_data, dtype=DTYPE):
         self.__sum += (self.__pre + input_data) / 2 * self.interval
         self.__pre = input_data

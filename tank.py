@@ -10,8 +10,10 @@ from views import Animation, OnTime, Accumulator, AniParallel, IAnmiation
 
 
 DTYPE = np.float32
-KP = 30 
+KP = 45
+KI = 200
 FONT_SIZE = 8
+OUT_RATE = .3 
 
 
 class TankLevelAnimatin(IAnmiation):
@@ -39,6 +41,7 @@ class Tank(ISystem):
         self.__capacity = capacity
         self.__timer = timer
         self.__sys = Integral(timer)
+        self.__sys.sum = init
 
     @property
     def timer(self):
@@ -66,7 +69,10 @@ class Tank(ISystem):
         return self.__sys
 
     def run_epoch(self, input_arr, dtype=DTYPE):
-        return self.__sys.run_epoch(input_arr, dtype=dtype)
+        output = self.__sys.run_epoch(input_arr, dtype=dtype) - OUT_RATE
+        output = output if output > 0 else 0
+        self.__sys.sum = output
+        return output
 
 
 class MySignal(ISignal):
@@ -74,60 +80,44 @@ class MySignal(ISignal):
         result = np.zeros_like(input_arr, dtype=DTYPE)
 
         for i, input_data in enumerate(input_arr):
-            if input_data < .8:
-                result[i] = 2.
-            elif input_data < 1.5:
-                result[i] = 4.
+            if input_data < 1.5:
+                result[i] = 3.
             else:
-                result[i] = 3
+                result[i] = 1.
 
         return result
 
 
 if __name__ == "__main__":
-    timer = Timer(end_time=3., interval=0.03)
+    timer = Timer(end_time=3., interval=0.01)
     tank = Tank(timer)
     tank2 = Tank(timer)
     tank3 = Tank(timer)
     signal = MySignal()
     fig = plt.figure()
-    ax = plt.subplot(3, 2, 1)
-    ax2 = plt.subplot(3, 2, 2)
-    ax3 = plt.subplot(3, 2, 3)
-    ax4 = plt.subplot(3, 2, 4)
-    ax5 = plt.subplot(3, 2, 5)
+    ax = plt.subplot(2, 2, 1)
+    ax2 = plt.subplot(2, 2, 2)
+    ax5 = plt.subplot(2, 2, 3)
 
 #    op_sys = Serial(timer, sys=[Gain(timer, gain=23), tank])
-    cl_sys = Feedback(timer, input_sys=tank2)
-    time_arr, output = cl_sys.simulate(signal)
+    i_term = Serial(timer, sys=[Gain(timer, gain=KI), Integral(timer)])
+    pid_sys = Parallel(timer, sys=[i_term, Gain(timer, gain=KP)])
 
-    ani_acc = Accumulator(time_arr, output)
-
-    ani = Animation([ani_acc], xlim=(0, 3), ylim=(-.5, 5))
-
-
-    p_cl_sys = Feedback(timer, input_sys=Serial(timer, sys=[Gain(timer, KP), tank3]))
-    time_arr, output = p_cl_sys.simulate(signal)
+    pid_cl_sys = Feedback(timer, input_sys=Serial(timer, sys=[pid_sys, tank]))
+    time_arr, output = pid_cl_sys.simulate(signal)
     ani_p_acc = Accumulator(time_arr, output)
     ani_p = Animation([ani_p_acc], xlim=(0, 3), ylim=(-.5, 5))
 
-    ani_p_errors_acc = Accumulator(time_arr, p_cl_sys.errors)
+    ani_p_errors_acc = Accumulator(time_arr, pid_cl_sys.errors)
     ani_p_errors = Animation([ani_p_errors_acc], xlim=(0, 3), ylim=(-.5, 5))
 
-    ani_errors_acc = Accumulator(time_arr, cl_sys.errors)
-    ani_errors = Animation([ani_errors_acc], xlim=(0, 3), ylim=(-.5, 5))
 
     tank_ani_acc = TankLevelAnimatin(time_arr, output)
     expected_acc = OnTime(time_arr, signal.generate(time_arr), color='red')
-
     tank_ani = Animation([tank_ani_acc, expected_acc], xlim=(0, 3), ylim=(-.5, 5))
 
-    wrapper = AniParallel([ani, ani_errors, ani_p, ani_p_errors, tank_ani], [ax, ax2, ax3, ax4, ax5], fig=fig)
-    ax.set_title("Closed loop", fontsize=FONT_SIZE)
-    ax2.set_title("Closed loop error", fontsize=FONT_SIZE)
 
-    ax3.set_title(f"Closed loop with Kp = {KP}", fontsize=FONT_SIZE)
-    ax4.set_title(f"Closed loop error with Kp = {KP}", fontsize=FONT_SIZE)
+    wrapper = AniParallel([ani_p, ani_p_errors, tank_ani], [ax, ax2, ax5], fig=fig)
     wrapper.draw(step=0.04)
 
     plt.plot()

@@ -22,6 +22,10 @@ class TankLevelAnimatin(IAnmiation):
     def __len__(self):
         return self._input_time.shape[0]
 
+    @property
+    def must_clear(self):
+        return True
+
     def get(self, index:int):
         return patches.Rectangle((0, 0), 5, self._data[index], linewidth=1)
 
@@ -62,7 +66,7 @@ class Tank(ISystem):
         return self.__sys
 
     def run_epoch(self, input_arr, dtype=DTYPE):
-        return self.__sys.run_epoch(input_arr, dtype=dtype)  
+        return self.__sys.run_epoch(input_arr, dtype=dtype)
 
 
 class MySignal(ISignal):
@@ -81,7 +85,7 @@ class MySignal(ISignal):
 
 
 if __name__ == "__main__":
-    timer = Timer(end_time=2., interval=0.05)
+    timer = Timer(end_time=3., interval=0.03)
     tank = Tank(timer)
     tank2 = Tank(timer)
     tank3 = Tank(timer)
@@ -99,24 +103,24 @@ if __name__ == "__main__":
 
     ani_acc = Accumulator(time_arr, output)
 
-    ani = Animation([ani_acc])
+    ani = Animation([ani_acc], xlim=(0, 3), ylim=(-.5, 5))
 
 
     p_cl_sys = Feedback(timer, input_sys=Serial(timer, sys=[Gain(timer, KP), tank3]))
     time_arr, output = p_cl_sys.simulate(signal)
     ani_p_acc = Accumulator(time_arr, output)
-    ani_p = Animation([ani_p_acc])
+    ani_p = Animation([ani_p_acc], xlim=(0, 3), ylim=(-.5, 5))
 
     ani_p_errors_acc = Accumulator(time_arr, p_cl_sys.errors)
-    ani_p_errors = Animation([ani_p_errors_acc])
+    ani_p_errors = Animation([ani_p_errors_acc], xlim=(0, 3), ylim=(-.5, 5))
 
     ani_errors_acc = Accumulator(time_arr, cl_sys.errors)
-    ani_errors = Animation([ani_errors_acc])
+    ani_errors = Animation([ani_errors_acc], xlim=(0, 3), ylim=(-.5, 5))
 
     tank_ani_acc = TankLevelAnimatin(time_arr, output)
     expected_acc = OnTime(time_arr, signal.generate(time_arr), color='red')
 
-    tank_ani = Animation([tank_ani_acc, expected_acc])
+    tank_ani = Animation([tank_ani_acc, expected_acc], xlim=(0, 3), ylim=(-.5, 5))
 
     wrapper = AniParallel([ani, ani_errors, ani_p, ani_p_errors, tank_ani], [ax, ax2, ax3, ax4, ax5], fig=fig)
     ax.set_title("Closed loop", fontsize=FONT_SIZE)
@@ -124,7 +128,6 @@ if __name__ == "__main__":
 
     ax3.set_title(f"Closed loop with Kp = {KP}", fontsize=FONT_SIZE)
     ax4.set_title(f"Closed loop error with Kp = {KP}", fontsize=FONT_SIZE)
-    wrapper.draw(step=0.01, xlim=(0, 3), ylim=(-0.5, 8))
+    wrapper.draw(step=0.04)
 
-    make_gif("images/") 
-    #plt.plot()
+    plt.plot()

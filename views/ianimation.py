@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
 
 class IAnmiation(ABC):
@@ -8,6 +8,10 @@ class IAnmiation(ABC):
 
     @abstractmethod
     def __len__(self):
+        pass
+
+    @abstractproperty
+    def must_clear(self):
         pass
 
     def draw(self, ax, index:int, **kwargs):

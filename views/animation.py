@@ -61,11 +61,11 @@ class AniParallel:
     def __len__(self):
         return find_max_len(self.anis)
 
-    def draw(self, step=0.01, xlim=(0, 5), ylim=(-0.5, 1.5)):
+    def draw(self, step=0.01, xlim=(0, 5), ylim=(-0.5, 1.5), speed_up=1):
         for ani, ax in zip(self.anis, self.axes):
             ani.set_up(ax)
 
-        for i in range(len(self)):
+        for i in range(0, len(self), speed_up):
             for ani, ax in zip(self.anis, self.axes):
                 ani.draw_step(ax, i)
 

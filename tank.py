@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from views import Animation, OnTime, Accumulator, AniParallel, IAnmiation
+from copy import deepcopy
 
 
 DTYPE = np.float32
@@ -13,6 +14,8 @@ KP = 45
 KI = 200
 FONT_SIZE = 8
 OUT_RATE = .3 
+XLIM = (0, 3)
+YLIM = (-.5, 5)
 
 
 class TankLevelAnimatin(IAnmiation):
@@ -90,34 +93,49 @@ class MySignal(ISignal):
 if __name__ == "__main__":
     timer = Timer(end_time=3., interval=0.01)
     tank = Tank(timer)
-    tank2 = Tank(timer)
-    tank3 = Tank(timer)
     signal = MySignal()
-    fig = plt.figure()
-    ax = plt.subplot(2, 2, 1)
-    ax2 = plt.subplot(2, 2, 2)
-    ax5 = plt.subplot(2, 2, 3)
+    fig, ax = plt.subplots(3, 2)
 
-#    op_sys = Serial(timer, sys=[Gain(timer, gain=23), tank])
-#    i_term = Serial(timer, sys=[Gain(timer, gain=KI), Integral(timer)])
-#    pid_sys = Parallel(timer, sys=[i_term, Gain(timer, gain=KP)])
-    pid_sys = Gain(timer, gain=KP)
-
-    pid_cl_sys = Feedback(timer, input_sys=Serial(timer, sys=[pid_sys, tank]))
-    time_arr, output = pid_cl_sys.simulate(signal)
+    # p system 
+    p_term = Gain(timer, gain=KP)
+    p_sys = Parallel(timer, sys=[p_term, Gain(timer, gain=KP)])
+    p_cl_sys = Feedback(timer, input_sys=Serial(timer, sys=[p_sys, deepcopy(tank)]))
+    time_arr, output = p_cl_sys.simulate(signal)
     ani_p_acc = Accumulator(time_arr, output)
-    ani_p = Animation([ani_p_acc], xlim=(0, 3), ylim=(-.5, 5))
+    ani_p = Animation([ani_p_acc], xlim=XLIM, ylim=YLIM) 
+    ani_p_errors_acc = Accumulator(time_arr, p_cl_sys.errors)
+    ani_p_errors = Animation([ani_p_errors_acc], xlim=XLIM, ylim=YLIM)
 
-    ani_p_errors_acc = Accumulator(time_arr, pid_cl_sys.errors)
-    ani_p_errors = Animation([ani_p_errors_acc], xlim=(0, 3), ylim=(-.5, 5))
-
-
-    tank_ani_acc = TankLevelAnimatin(time_arr, output)
-    expected_acc = OnTime(time_arr, signal.generate(time_arr), color='red')
-    tank_ani = Animation([tank_ani_acc, expected_acc], xlim=(0, 3), ylim=(-.5, 5))
+    tank_ani_acc_p = TankLevelAnimatin(time_arr, output)
+    expected_acc = OnTime(time_arr, signal.generate(time_arr), color='red', label="expected level")
+    tank_ani_p = Animation([tank_ani_acc_p, expected_acc], xlim=XLIM, ylim=YLIM)
 
 
-    wrapper = AniParallel([ani_p, ani_p_errors, tank_ani], [ax, ax2, ax5], fig=fig)
+    # pi controller
+    pi_term = Serial(timer, sys=[Gain(timer, gain=KI), Integral(timer)])
+    pi_sys = Parallel(timer, sys=[pi_term, Gain(timer, gain=KP)])
+
+    pi_cl_sys = Feedback(timer, input_sys=Serial(timer, sys=[pi_sys, deepcopy(tank)]))
+    time_arr, output = pi_cl_sys.simulate(signal)
+    ani_pi_acc = Accumulator(time_arr, output)
+    ani_pi = Animation([ani_p_acc], xlim=XLIM, ylim=YLIM)
+
+    ani_pi_errors_acc = Accumulator(time_arr, pi_cl_sys.errors)
+    ani_pi_errors = Animation([ani_pi_errors_acc], xlim=XLIM, ylim=YLIM)
+
+    tank_ani_acc_pi = TankLevelAnimatin(time_arr, output)
+    tank_ani_pi = Animation([tank_ani_acc_pi, expected_acc], xlim=XLIM, ylim=YLIM)
+
+    ax[0, 0].set_title("Tank level with p controller")
+    ax[0, 1].set_title("Tank level with pi controller")
+    ax[0, 0].set_ylabel("Current level")
+    ax[1, 0].set_ylabel("Error")
+    ax[2, 0].set_ylabel("Tank simulation")
+
+
+    wrapper = AniParallel([ani_p, ani_p_errors, ani_pi, ani_pi_errors, tank_ani_p, tank_ani_pi], 
+            [ax[0, 0], ax[1, 0], ax[0, 1], ax[1, 1], ax[2, 0], ax[2, 1]], fig=fig)
     wrapper.draw(step=0.04)
+    plt.legeng()
 
     plt.plot()

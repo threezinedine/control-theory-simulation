@@ -16,5 +16,5 @@ class IAnmiation(ABC):
 
     def draw(self, ax, index:int, **kwargs):
         x, y = self.get(index)
-        ax.plot(x, y, **kwargs)
+        ax.plot(x, y, **self.kwargs)
         

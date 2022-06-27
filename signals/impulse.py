@@ -3,8 +3,9 @@ import numpy as np
 
 
 class Impulse(ISignal):
-    def __init__(self, pulse_time=0.2):
+    def __init__(self, pulse_time=0.2, gain=1.):
         self.__pulse_time = np.float32(pulse_time)
+        self.__gain = gain
 
     def generate(self, input_time:np.ndarray, dtype=np.float32):
         output = np.zeros_like(input_time, dtype=dtype)
@@ -27,4 +28,4 @@ class Impulse(ISignal):
                 output[i-1] = size
                 break
 
-        return output
+        return output * self.__gain

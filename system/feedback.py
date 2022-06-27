@@ -47,4 +47,4 @@ class Feedback(ISystem):
 
     @property
     def errors(self):
-        return np.array(self.__errors)
+        return np.array(self.__errors, dtype=DTYPE)

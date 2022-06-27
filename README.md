@@ -7,3 +7,11 @@
   + cannot reach the desired value
 - PI controller: ![alt text](https://github.com/threezinedine/control-theory-simulation/blob/main/images/pid_image.png)
   + with an I component -> can reach the desired value
+
+## Result 
+
+- Tank level Controller
+![alt text](https://github.com/threezinedine/control-theory-simulation/blob/main/images/tank_level.png)
+
+- Magnetic Train Controller
+![alt text](https://github.com/threezinedine/control-theory-simulation/blob/main/images/magnetic_train.png)

@@ -132,10 +132,10 @@ if __name__ == "__main__":
     ax[1, 0].set_ylabel("Error")
     ax[2, 0].set_ylabel("Tank simulation")
 
-
+    plt.legend(loc="best")
     wrapper = AniParallel([ani_p, ani_p_errors, ani_pi, ani_pi_errors, tank_ani_p, tank_ani_pi], 
             [ax[0, 0], ax[1, 0], ax[0, 1], ax[1, 1], ax[2, 0], ax[2, 1]], fig=fig)
     wrapper.draw(step=0.04)
-    plt.legeng()
 
     plt.plot()
+    plt.show()
